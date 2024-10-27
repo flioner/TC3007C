@@ -23,6 +23,7 @@ print("                                 ")
 print("        Regresión Lineal:        ")
 print("                                 ")
 print("#################################\n\n")
+
 X_scaled_const = sm.add_constant(X_Scaled)
 regresion = sm.OLS(y, X_scaled_const).fit()
 print(regresion.summary())
@@ -44,14 +45,9 @@ print("                                 ")
 print("      Matriz de covarianza:      ")
 print("                                 ")
 print("#################################\n\n")
-cov_matrix = np.cov(X_Scaled, rowvar=False)
-cov_df = pd.DataFrame(cov_matrix, index=X.columns, columns=X.columns)
-print(cov_df)
-
-
 #################################
 # Hay correlaciones importantes entre variables socioeconómicas y de salud. 
-# La experanza de vida parece estar fuertemente relacionada con:
+# La esperanza de vida parece estar fuertemente relacionada con:
 #   -  child_mort: -0.89
 #   -  total_fer:   0.76
 #   -  income:      0.61
@@ -59,24 +55,26 @@ print(cov_df)
 # Parece haber una correlación significativa entre imports y exports con 0.74
 #################################
 
+cov_matrix = np.cov(X_Scaled, rowvar=False)
+cov_df = pd.DataFrame(cov_matrix, index=X.columns, columns=X.columns)
+print(cov_df)
 
-# Valores y vectores propios
+
 print("\n\n#################################")
 print("                                 ")
 print("  Valores y vectores propios:    ")
 print("                                 ")
 print("#################################\n\n")
-valorespropios, vectorespropios = np.linalg.eig(cov_matrix)
-valorespropios_df = pd.DataFrame(valorespropios, index=[f'Valor Propio {i+1}' for i in range(len(valorespropios))], columns=['Valor propio'])
-vectorespropios_df = pd.DataFrame(vectorespropios, columns=[f'Vector Propio {i+1}' for i in range(len(vectorespropios))], index=X.columns)
-
-
 ################################# 
 # Al igual que en la matriz de covarianza y según el analisis 
 # de regresión lineal multiple, podemos ver que en ciertos casos
-# como el del vector propio 1, se ve m,as influenciado por variables
+# como el del vector propio 1, se ve mas influenciado por variables
 # como child_mort, life_expec, y total_fer.
 #################################
+
+valorespropios, vectorespropios = np.linalg.eig(cov_matrix)
+valorespropios_df = pd.DataFrame(valorespropios, index=[f'Valor Propio {i+1}' for i in range(len(valorespropios))], columns=['Valor propio'])
+vectorespropios_df = pd.DataFrame(vectorespropios, columns=[f'Vector Propio {i+1}' for i in range(len(vectorespropios))], index=X.columns)
 
 print("Valores propios:")
 print(valorespropios_df)
@@ -92,15 +90,12 @@ n_componentes = np.argmax(varianza_acumulada >= 0.80) + 1
 print(f"\nNúmero de componentes principales seleccionados: {n_componentes}")
 print(f"\nVarianza acumulada por los primeros {n_componentes} componentes: {varianza_acumulada[n_componentes-1]:.2f}")
 
-# Componentes principales y ecuaciones de transformación
 print("\n\n#################################")
 print("                                 ")
 print("     Componentes principales y   ")
 print("    ecuaciones de transformación ")
 print("                                 ")
 print("#################################\n\n")
-
-
 #################################
 # El componente principal 1 se ve mas influenciado por:
 # - child_mort, life_expec, total_fert e income
@@ -163,13 +158,17 @@ print("                                 ")
 print("    Nuevo Modelo de Regresión:   ")
 print("                                 ")
 print("#################################\n\n")
-
 #################################
 # Queríamos que el nuevo modelo de regresión cumpliera con el 80% de la varianza acumalada, y lo logra con los primeros 4 componentes
-#################################
+# teniendo una varianza acumulada del 0.88
+#
+# Desafortunadamente nuestro R^2 bajó de 0.86 a 0.610
+# Tomando esto en cuenta podemos ver que los Componentes 1 y 4 son altamente significativos con un valor P muy cercano a 0.
+##################################
+
 X_transformado_const = sm.add_constant(X_transformado_df.iloc[:, :n_componentes])
-modelo_pca = sm.OLS(y, X_transformado_const).fit()
-print(modelo_pca.summary())
+regresion_principales = sm.OLS(y, X_transformado_const).fit()
+print(regresion_principales.summary())
 
 
 # Los clusters es lo unico que si no terminé de entender
