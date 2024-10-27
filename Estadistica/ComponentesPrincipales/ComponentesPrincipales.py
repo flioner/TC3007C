@@ -32,6 +32,9 @@ print(regresion.summary())
 # 
 # "Health", "income" y "life_expec" son significativas con p-valores menores a 0.05.
 # Algunas variables, como "exports", "imports" y "total_fer", no son significativas, 
+#
+# Al tener un valor de Durbin-Watson de 1.9 (cercano a 2) podemos decir que hay poca 
+# autocorrelación entre los residuos
 #################################
 
 
@@ -48,9 +51,12 @@ print(cov_df)
 
 #################################
 # Hay correlaciones importantes entre variables socioeconómicas y de salud. 
-# Las tasas de mortalidad infantil y fertilidad están fuertemente correlacionadas (0.85) y ambas tienen una relación negativa
-# con la esperanza de vida (-0.89 y -0.77). 
-# El ingreso también muestra una correlación positiva con la esperanza de vida (0.62).
+# La experanza de vida parece estar fuertemente relacionada con:
+#   -  child_mort: -0.89
+#   -  total_fer:   0.76
+#   -  income:      0.61
+# Parece haber una correlación significativa entre total_fer y child_mort con 0.85
+# Parece haber una correlación significativa entre imports y exports con 0.74
 #################################
 
 
@@ -64,6 +70,13 @@ valorespropios, vectorespropios = np.linalg.eig(cov_matrix)
 valorespropios_df = pd.DataFrame(valorespropios, index=[f'Valor Propio {i+1}' for i in range(len(valorespropios))], columns=['Valor propio'])
 vectorespropios_df = pd.DataFrame(vectorespropios, columns=[f'Vector Propio {i+1}' for i in range(len(vectorespropios))], index=X.columns)
 
+
+################################# 
+# Al igual que en la matriz de covarianza y según el analisis 
+# de regresión lineal multiple, podemos ver que en ciertos casos
+# como el del vector propio 1, se ve m,as influenciado por variables
+# como child_mort, life_expec, y total_fer.
+#################################
 
 print("Valores propios:")
 print(valorespropios_df)
@@ -86,6 +99,21 @@ print("     Componentes principales y   ")
 print("    ecuaciones de transformación ")
 print("                                 ")
 print("#################################\n\n")
+
+
+#################################
+# El componente principal 1 se ve mas influenciado por:
+# - child_mort, life_expec, total_fert e income
+#
+# El componente principal 2 se ve mas influenciado por:
+# - exports, imports y health
+#
+# El componente principal 3 se ve mas influenciado por:
+# - inflation, health  e imports
+#
+# El componente principal 4 se ve mas influenciado por:
+# - inflation, health e income
+#################################
 
 componentes_variables = pd.DataFrame(vectorespropios_df)
 componentes_variables.columns = [f'Componente {i+1}' for i in range(len(componentes_variables.columns))]
@@ -115,13 +143,13 @@ for componente, ecuacion in ecuaciones_componentes.items():
     print(f"{componente}: {ecuacion}")
 
 
-
 # Crear un DataFrame con los datos transformados
 print("\n\n#################################")
 print("                                 ")
 print("       Datos Transformados:      ")
 print("                                 ")
 print("#################################\n\n")
+
 # Transformar los datos al nuevo espacio con los componentes seleccionados
 vectores_seleccionados = vectorespropios[:, :n_componentes]
 X_transformado = np.dot(X_Scaled, vectores_seleccionados)
@@ -135,12 +163,16 @@ print("                                 ")
 print("    Nuevo Modelo de Regresión:   ")
 print("                                 ")
 print("#################################\n\n")
+
+#################################
+# Queríamos que el nuevo modelo de regresión cumpliera con el 80% de la varianza acumalada, y lo logra con los primeros 4 componentes
+#################################
 X_transformado_const = sm.add_constant(X_transformado_df.iloc[:, :n_componentes])
 modelo_pca = sm.OLS(y, X_transformado_const).fit()
 print(modelo_pca.summary())
 
 
-
+# Los clusters es lo unico que si no terminé de entender
 kmeans = KMeans(n_clusters=3, random_state=42) 
 clusters = kmeans.fit_predict(X_transformado_df)
 X_transformado_df['Cluster'] = clusters
